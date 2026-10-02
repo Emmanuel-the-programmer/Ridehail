@@ -43,10 +43,13 @@ class RiderRegistrationSerializer(serializers.ModelSerializer):
 
 
 class RideRequestSerializer(serializers.ModelSerializer):
+    driver_username = serializers.CharField(source="driver.username", read_only=True, default=None)
+
     class Meta:
         model = RideRequest
         fields = (
             "id",
+            "driver_username",
             "pickup_address",
             "pickup_latitude",
             "pickup_longitude",
@@ -54,10 +57,21 @@ class RideRequestSerializer(serializers.ModelSerializer):
             "destination_latitude",
             "destination_longitude",
             "status",
+            "payment_method",
+            "payment_status",
+            "cash_paid_at",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "status", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "status",
+            "payment_method",
+            "payment_status",
+            "cash_paid_at",
+            "created_at",
+            "updated_at",
+        )
 
     def validate(self, attrs):
         for field in (
@@ -77,3 +91,30 @@ class RideRequestSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+
+class DriverLocationSerializer(serializers.Serializer):
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    is_available = serializers.BooleanField()
+
+    def validate_latitude(self, value):
+        if not -90 <= value <= 90:
+            raise serializers.ValidationError("Latitude must be between -90 and 90.")
+        return value
+
+    def validate_longitude(self, value):
+        if not -180 <= value <= 180:
+            raise serializers.ValidationError("Longitude must be between -180 and 180.")
+        return value
+
+
+class RideStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=(
+            RideRequest.Status.DRIVER_ARRIVING,
+            RideRequest.Status.ARRIVED,
+            RideRequest.Status.IN_PROGRESS,
+            RideRequest.Status.COMPLETED,
+        )
+    )

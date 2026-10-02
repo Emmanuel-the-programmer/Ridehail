@@ -9,6 +9,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -79,4 +80,19 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": (
+            "channels_redis.core.RedisChannelLayer"
+            if os.environ.get("CHANNEL_REDIS_URL")
+            else "channels.layers.InMemoryChannelLayer"
+        ),
+        **(
+            {"CONFIG": {"hosts": [os.environ["CHANNEL_REDIS_URL"]]}}
+            if os.environ.get("CHANNEL_REDIS_URL")
+            else {}
+        ),
+    }
 }
